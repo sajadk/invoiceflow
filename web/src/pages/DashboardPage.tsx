@@ -1,8 +1,9 @@
+import { useAuth } from '@/features/auth/useAuth'
 import { HealthStatusCard } from '@/features/health/HealthStatusCard'
 
 const milestones = [
   { title: 'Scaffold + health check', done: true },
-  { title: 'Authentication (Sanctum)', done: false },
+  { title: 'Authentication (Sanctum)', done: true },
   { title: 'Customers', done: false },
   { title: 'Invoices + VAT', done: false },
   { title: 'Payments + dashboard', done: false },
@@ -11,10 +12,15 @@ const milestones = [
 ]
 
 export function DashboardPage() {
+  const { user } = useAuth()
+  const firstName = user?.name.split(' ')[0]
+
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {firstName ? `Welcome back, ${firstName}` : 'Dashboard'}
+        </h1>
         <p className="mt-1 text-sm text-slate-500">
           Revenue, outstanding balances and overdue invoices will live here.
         </p>

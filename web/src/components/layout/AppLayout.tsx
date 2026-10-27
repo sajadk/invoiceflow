@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router'
+import { UserMenu } from './UserMenu'
 
 type NavItem = {
   label: string
@@ -55,12 +56,13 @@ export function AppLayout() {
           )}
         </nav>
 
-        <p className="px-6 py-4 text-xs text-slate-400">VAT invoicing · AED</p>
+        <UserMenu />
       </aside>
 
       <div className="flex flex-1 flex-col">
-        <header className="flex h-16 items-center border-b border-slate-200 bg-white px-6 md:hidden">
+        <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 md:hidden">
           <span className="text-lg font-semibold tracking-tight">InvoiceFlow</span>
+          <UserMenu compact />
         </header>
         <main className="flex-1 p-6 md:p-10">
           <Outlet />

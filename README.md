@@ -29,9 +29,31 @@ make up      # starts mysql, api and web
 |---|---|
 | Web app | http://localhost:5173 |
 | API health | http://localhost:8000/api/health |
-| MySQL | `localhost:3307` · user `invoiceflow` / `secret` |
+| MySQL | `localhost:3307` (or `MYSQL_HOST_PORT` from a root `.env`) · user `invoiceflow` / `secret` |
 
-Other commands: `make test`, `make shell`, `make tinker`, `make fresh`, `make down`.
+**Demo account:** `demo@invoiceflow.test` / `password` (created by `make seed`).
+
+Other commands: `make test`, `make seed`, `make shell`, `make tinker`, `make fresh`, `make down`.
+
+Tests run against a separate `invoiceflow_testing` database (`api/.env.testing`), so they never touch your dev data. On an existing MySQL volume, create it once with `make test-db`.
+
+## Authentication
+
+Sanctum **SPA cookie authentication**: no tokens in the browser.
+
+1. `GET /sanctum/csrf-cookie` sets the `XSRF-TOKEN` cookie.
+2. `POST /api/login` checks the credentials, regenerates the session and sets an `HttpOnly` session cookie.
+3. Every later request is authenticated by that cookie. `auth:sanctum` protects the API routes.
+
+On the frontend, an `AuthProvider` (React Context backed by TanStack Query) exposes `useAuth()`. `ProtectedRoute` and `GuestRoute` layout routes handle redirects. Login attempts are rate-limited per email and IP.
+
+| Method | Endpoint | Auth |
+|---|---|---|
+| GET | `/api/health` | — |
+| POST | `/api/register` | — |
+| POST | `/api/login` | — |
+| GET | `/api/user` | session |
+| POST | `/api/logout` | session |
 
 ## Project structure
 
@@ -51,7 +73,7 @@ docker/api/       dev image + setup script
 ## Roadmap
 
 - [x] Scaffold: Docker, Laravel API, React + TS + Tailwind, end-to-end health check
-- [ ] Authentication with Sanctum SPA cookies, protected routes
+- [x] Authentication with Sanctum SPA cookies, protected routes
 - [ ] Customers (TRN validation, server-side pagination and search)
 - [ ] Invoices with line items, live VAT totals, statuses, PDF
 - [ ] Payments and dashboard (revenue chart, aging)
