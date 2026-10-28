@@ -31,7 +31,7 @@ make up      # starts mysql, api and web
 | API health | http://localhost:8000/api/health |
 | MySQL | `localhost:3307` (or `MYSQL_HOST_PORT` from a root `.env`) · user `invoiceflow` / `secret` |
 
-**Demo account:** `demo@invoiceflow.test` / `password` (created by `make seed`).
+**Demo account:** `demo@invoiceflow.test` / `password`, with 32 sample customers (created by `make seed`).
 
 Other commands: `make test`, `make seed`, `make shell`, `make tinker`, `make fresh`, `make down`.
 
@@ -54,6 +54,9 @@ On the frontend, an `AuthProvider` (React Context backed by TanStack Query) expo
 | POST | `/api/login` | — |
 | GET | `/api/user` | session |
 | POST | `/api/logout` | session |
+| GET | `/api/customers?search=&emirate=&sort=-created_at&page=` | session |
+| POST | `/api/customers` | session |
+| GET / PUT / DELETE | `/api/customers/{id}` | session (owner only) |
 
 ## Project structure
 
@@ -70,11 +73,15 @@ api/
 docker/api/       dev image + setup script
 ```
 
+## Customers
+
+Server-side search (name, email, TRN), emirate filter, sorting and pagination. Every filter lives in the URL, so views can be bookmarked and shared. Create and edit happen in a slide-over form (React Hook Form + Zod, with server 422 errors mapped back onto fields), and deletes are optimistic with rollback. Customers are scoped to their owner; other users' records return 404.
+
 ## Roadmap
 
 - [x] Scaffold: Docker, Laravel API, React + TS + Tailwind, end-to-end health check
 - [x] Authentication with Sanctum SPA cookies, protected routes
-- [ ] Customers (TRN validation, server-side pagination and search)
+- [x] Customers (TRN validation, server-side pagination and search)
 - [ ] Invoices with line items, live VAT totals, statuses, PDF
 - [ ] Payments and dashboard (revenue chart, aging)
 - [ ] Tests (Vitest, Testing Library, PHPUnit) and GitHub Actions CI

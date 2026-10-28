@@ -28,7 +28,7 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
 
   if (compact) {
     return (
-      <Button variant="ghost" onClick={handleLogout} isLoading={isLoggingOut} className="px-2 py-1.5">
+      <Button variant="ghost" onClick={handleLogout} isLoading={isLoggingOut} size="sm">
         Log out
       </Button>
     )

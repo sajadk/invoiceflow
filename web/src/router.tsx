@@ -3,6 +3,7 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { GuestRoute } from '@/components/routing/GuestRoute'
 import { ProtectedRoute } from '@/components/routing/ProtectedRoute'
+import { CustomersPage } from '@/pages/CustomersPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
@@ -31,7 +32,10 @@ export const router = createBrowserRouter([
       {
         path: '/',
         element: <AppLayout />,
-        children: [{ index: true, element: <DashboardPage /> }],
+        children: [
+          { index: true, element: <DashboardPage /> },
+          { path: 'customers', element: <CustomersPage /> },
+        ],
       },
     ],
   },

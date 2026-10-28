@@ -20,6 +20,19 @@ export const api = axios.create({
 /** Laravel API Resources wrap single models in { data: ... } */
 export type ApiResource<T> = { data: T }
 
+/** Shape of ResourceCollection::collection($paginator) */
+export type Paginated<T> = {
+  data: T[]
+  meta: {
+    current_page: number
+    last_page: number
+    per_page: number
+    total: number
+    from: number | null
+    to: number | null
+  }
+}
+
 /** Asks Laravel to set the XSRF-TOKEN cookie. Call before the first state-changing request. */
 export async function ensureCsrfCookie(): Promise<void> {
   await api.get('/sanctum/csrf-cookie', { baseURL: '/' })

@@ -9,7 +9,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', to: '/', ready: true },
-  { label: 'Customers', to: '/customers', ready: false },
+  { label: 'Customers', to: '/customers', ready: true },
   { label: 'Invoices', to: '/invoices', ready: false },
   { label: 'Payments', to: '/payments', ready: false },
 ]
