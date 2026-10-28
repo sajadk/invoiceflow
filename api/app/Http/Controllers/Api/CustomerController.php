@@ -28,7 +28,7 @@ class CustomerController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
             'emirate' => ['nullable', Rule::enum(Emirate::class)],
             'sort' => ['nullable', Rule::in([...self::SORTABLE, ...array_map(fn ($c) => "-{$c}", self::SORTABLE)])],
-            'per_page' => ['nullable', 'integer', 'min:5', 'max:50'],
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
         ]);
 
         $sort = $filters['sort'] ?? 'name';

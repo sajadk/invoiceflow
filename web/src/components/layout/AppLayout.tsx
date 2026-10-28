@@ -10,7 +10,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { label: 'Dashboard', to: '/', ready: true },
   { label: 'Customers', to: '/customers', ready: true },
-  { label: 'Invoices', to: '/invoices', ready: false },
+  { label: 'Invoices', to: '/invoices', ready: true },
   { label: 'Payments', to: '/payments', ready: false },
 ]
 
@@ -31,7 +31,7 @@ export function AppLayout() {
               <NavLink
                 key={item.to}
                 to={item.to}
-                end
+                end={item.to === '/'}
                 className={({ isActive }) =>
                   `block rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                     isActive

@@ -31,7 +31,7 @@ make up      # starts mysql, api and web
 | API health | http://localhost:8000/api/health |
 | MySQL | `localhost:3307` (or `MYSQL_HOST_PORT` from a root `.env`) · user `invoiceflow` / `secret` |
 
-**Demo account:** `demo@invoiceflow.test` / `password`, with 32 sample customers (created by `make seed`).
+**Demo account:** `demo@invoiceflow.test` / `password`, with 32 sample customers and 28 invoices in every status (created by `make seed`).
 
 Other commands: `make test`, `make seed`, `make shell`, `make tinker`, `make fresh`, `make down`.
 
@@ -57,6 +57,11 @@ On the frontend, an `AuthProvider` (React Context backed by TanStack Query) expo
 | GET | `/api/customers?search=&emirate=&sort=-created_at&page=` | session |
 | POST | `/api/customers` | session |
 | GET / PUT / DELETE | `/api/customers/{id}` | session (owner only) |
+| GET | `/api/invoices?status=overdue&search=&sort=-issue_date&page=` | session |
+| POST | `/api/invoices` | session |
+| GET / PUT / DELETE | `/api/invoices/{id}` | session (PUT/DELETE drafts only) |
+| POST | `/api/invoices/{id}/send` · `/mark-paid` · `/void` | session |
+| GET | `/api/invoices/{id}/pdf` | session |
 
 ## Project structure
 
@@ -77,12 +82,20 @@ docker/api/       dev image + setup script
 
 Server-side search (name, email, TRN), emirate filter, sorting and pagination. Every filter lives in the URL, so views can be bookmarked and shared. Create and edit happen in a slide-over form (React Hook Form + Zod, with server 422 errors mapped back onto fields), and deletes are optimistic with rollback. Customers are scoped to their owner; other users' records return 404.
 
+## Invoices & VAT
+
+- **Line-item editor** (React Hook Form `useFieldArray`) with live subtotal, VAT and total as you type.
+- **UAE VAT treatments** per line: standard 5%, zero-rated, exempt, with a per-rate breakdown.
+- **Money as integer fils** end to end. `InvoiceCalculator.php` and `money.ts` implement identical half-up integer rounding, so browser and server totals always agree. The server recalculates and ignores client totals.
+- **Lifecycle:** draft → sent → paid / void. Sending assigns a gap-free number (`INV-2026-0001`) under a row lock and freezes the customer's details. Sent invoices are immutable. *Overdue* is derived, not stored. Wrong-state actions return **409**.
+- **PDF** tax invoice (dompdf) with DRAFT / PAID / VOID watermarks.
+
 ## Roadmap
 
 - [x] Scaffold: Docker, Laravel API, React + TS + Tailwind, end-to-end health check
 - [x] Authentication with Sanctum SPA cookies, protected routes
 - [x] Customers (TRN validation, server-side pagination and search)
-- [ ] Invoices with line items, live VAT totals, statuses, PDF
+- [x] Invoices with line items, live VAT totals, statuses, PDF
 - [ ] Payments and dashboard (revenue chart, aging)
 - [ ] Tests (Vitest, Testing Library, PHPUnit) and GitHub Actions CI
 - [ ] AWS deploy (S3 + CloudFront, EC2 + RDS)

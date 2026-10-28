@@ -5,7 +5,7 @@ const milestones = [
   { title: 'Scaffold + health check', done: true },
   { title: 'Authentication (Sanctum)', done: true },
   { title: 'Customers', done: true },
-  { title: 'Invoices + VAT', done: false },
+  { title: 'Invoices + VAT', done: true },
   { title: 'Payments + dashboard', done: false },
   { title: 'Tests + CI', done: false },
   { title: 'AWS deploy', done: false },
