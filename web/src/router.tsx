@@ -5,6 +5,10 @@ import { GuestRoute } from '@/components/routing/GuestRoute'
 import { ProtectedRoute } from '@/components/routing/ProtectedRoute'
 import { CustomersPage } from '@/pages/CustomersPage'
 import { DashboardPage } from '@/pages/DashboardPage'
+import { InvoiceCreatePage } from '@/pages/InvoiceCreatePage'
+import { InvoiceDetailPage } from '@/pages/InvoiceDetailPage'
+import { InvoiceEditPage } from '@/pages/InvoiceEditPage'
+import { InvoicesPage } from '@/pages/InvoicesPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { RegisterPage } from '@/pages/RegisterPage'
@@ -35,6 +39,10 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <DashboardPage /> },
           { path: 'customers', element: <CustomersPage /> },
+          { path: 'invoices', element: <InvoicesPage /> },
+          { path: 'invoices/new', element: <InvoiceCreatePage /> },
+          { path: 'invoices/:invoiceId', element: <InvoiceDetailPage /> },
+          { path: 'invoices/:invoiceId/edit', element: <InvoiceEditPage /> },
         ],
       },
     ],

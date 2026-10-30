@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Paginated } from '@/lib/api'
-import { createCustomer, deleteCustomer, fetchCustomers, updateCustomer } from './api'
+import { createCustomer, deleteCustomer, fetchCustomerOptions, fetchCustomers, updateCustomer } from './api'
 import { customerKeys } from './queryKeys'
 import type { Customer, CustomerListParams, CustomerPayload } from './types'
 
@@ -13,11 +13,20 @@ export function useCustomers(params: CustomerListParams) {
   })
 }
 
+/** Customer picker options. Invalidated with every customer change (customerKeys.all). */
+export function useCustomerOptions() {
+  return useQuery({
+    queryKey: customerKeys.options(),
+    queryFn: fetchCustomerOptions,
+    staleTime: 60_000,
+  })
+}
+
 export function useCreateCustomer() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (payload: CustomerPayload) => createCustomer(payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: customerKeys.lists() }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: customerKeys.all }),
   })
 }
 
@@ -25,7 +34,7 @@ export function useUpdateCustomer() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: CustomerPayload }) => updateCustomer(id, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: customerKeys.lists() }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: customerKeys.all }),
   })
 }
 
@@ -62,6 +71,6 @@ export function useDeleteCustomer() {
     },
 
     // Success or failure, re-sync with the server (pages shift by one after a delete).
-    onSettled: () => queryClient.invalidateQueries({ queryKey: customerKeys.lists() }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: customerKeys.all }),
   })
 }

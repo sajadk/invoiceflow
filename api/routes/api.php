@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\HealthController;
+use App\Http\Controllers\Api\InvoiceController;
 use Illuminate\Support\Facades\Route;
 
 // Public
@@ -17,4 +18,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
 
     Route::apiResource('customers', CustomerController::class);
+
+    Route::apiResource('invoices', InvoiceController::class);
+    Route::controller(InvoiceController::class)->prefix('invoices/{invoice}')->name('invoices.')->group(function () {
+        Route::post('/send', 'send')->name('send');
+        Route::post('/mark-paid', 'markPaid')->name('mark-paid');
+        Route::post('/void', 'void')->name('void');
+        Route::get('/pdf', 'pdf')->name('pdf');
+    });
 });

@@ -17,6 +17,12 @@ export async function fetchCustomers(params: CustomerListParams): Promise<Pagina
   return data
 }
 
+/** Up to 100 active customers, A–Z, for pickers such as the invoice form. */
+export async function fetchCustomerOptions(): Promise<Customer[]> {
+  const { data } = await api.get<Paginated<Customer>>('/customers', { params: { per_page: 100, sort: 'name' } })
+  return data.data
+}
+
 export async function createCustomer(payload: CustomerPayload): Promise<Customer> {
   const { data } = await api.post<ApiResource<Customer>>('/customers', payload)
   return data.data
