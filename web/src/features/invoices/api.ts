@@ -35,7 +35,7 @@ export async function deleteInvoice(id: number): Promise<void> {
   await api.delete(`/invoices/${id}`)
 }
 
-/** send | mark-paid | void */
+/** send | void (payments have their own endpoints) */
 export async function runInvoiceAction(id: number, action: InvoiceAction): Promise<InvoiceDetail> {
   const { data } = await api.post<ApiResource<InvoiceDetail>>(`/invoices/${id}/${action}`)
   return data.data

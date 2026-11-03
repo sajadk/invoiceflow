@@ -111,6 +111,10 @@
         </tr>
     @endforeach
     <tr class="grand"><td>Total {{ $invoice->currency }}</td><td class="right">{{ $money($invoice->total) }}</td></tr>
+    @if ($invoice->amount_paid > 0)
+        <tr><td class="muted">Amount paid</td><td class="right">−{{ $money($invoice->amount_paid) }}</td></tr>
+        <tr><td><strong>Balance due</strong></td><td class="right"><strong>{{ $money($invoice->balanceDue()) }}</strong></td></tr>
+    @endif
 </table>
 
 @if ($invoice->notes)

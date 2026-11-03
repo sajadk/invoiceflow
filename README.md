@@ -31,7 +31,7 @@ make up      # starts mysql, api and web
 | API health | http://localhost:8000/api/health |
 | MySQL | `localhost:3307` (or `MYSQL_HOST_PORT` from a root `.env`) · user `invoiceflow` / `secret` |
 
-**Demo account:** `demo@invoiceflow.test` / `password`, with 32 sample customers and 28 invoices in every status (created by `make seed`).
+**Demo account:** `demo@invoiceflow.test` / `password`, with 32 sample customers and 28 invoices in every status, including part-paid ones (created by `make seed`).
 
 Other commands: `make test`, `make seed`, `make shell`, `make tinker`, `make fresh`, `make down`.
 
@@ -60,7 +60,11 @@ On the frontend, an `AuthProvider` (React Context backed by TanStack Query) expo
 | GET | `/api/invoices?status=overdue&search=&sort=-issue_date&page=` | session |
 | POST | `/api/invoices` | session |
 | GET / PUT / DELETE | `/api/invoices/{id}` | session (PUT/DELETE drafts only) |
-| POST | `/api/invoices/{id}/send` · `/mark-paid` · `/void` | session |
+| POST | `/api/invoices/{id}/send` · `/void` | session |
+| POST | `/api/invoices/{id}/payments` | session (sent invoices only) |
+| GET | `/api/payments?search=&method=&from=&to=&page=` | session |
+| DELETE | `/api/payments/{id}` | session |
+| GET | `/api/dashboard` | session |
 | GET | `/api/invoices/{id}/pdf` | session |
 
 ## Project structure
@@ -87,8 +91,14 @@ Server-side search (name, email, TRN), emirate filter, sorting and pagination. E
 - **Line-item editor** (React Hook Form `useFieldArray`) with live subtotal, VAT and total as you type.
 - **UAE VAT treatments** per line: standard 5%, zero-rated, exempt, with a per-rate breakdown.
 - **Money as integer fils** end to end. `InvoiceCalculator.php` and `money.ts` implement identical half-up integer rounding, so browser and server totals always agree. The server recalculates and ignores client totals.
-- **Lifecycle:** draft → sent → paid / void. Sending assigns a gap-free number (`INV-2026-0001`) under a row lock and freezes the customer's details. Sent invoices are immutable. *Overdue* is derived, not stored. Wrong-state actions return **409**.
+- **Lifecycle:** draft → sent → (partially) paid / void. Sending assigns a gap-free number (`INV-2026-0001`) under a row lock and freezes the customer's details. Sent invoices are immutable. *Overdue* is derived, not stored. Wrong-state actions return **409**.
 - **PDF** tax invoice (dompdf) with DRAFT / PAID / VOID watermarks.
+
+## Payments & dashboard
+
+- **Full or partial payments** per invoice (amount, date, method, reference). Paid status follows the balance: paying the rest marks the invoice *paid*, deleting a payment reopens it. *Partially paid*, like *overdue*, is derived.
+- `amount_paid` is a running total kept in step inside a transaction with the invoice row locked, so two simultaneous payments can't overpay an invoice.
+- **Dashboard** computed in SQL: outstanding and overdue balances, collected this month vs last, output VAT this quarter, 12-month invoiced vs collected chart (Recharts), receivables aging (current / 1–30 / 31–60 / 61–90 / 90+), top debtors and recent payments.
 
 ## Roadmap
 
@@ -96,6 +106,6 @@ Server-side search (name, email, TRN), emirate filter, sorting and pagination. E
 - [x] Authentication with Sanctum SPA cookies, protected routes
 - [x] Customers (TRN validation, server-side pagination and search)
 - [x] Invoices with line items, live VAT totals, statuses, PDF
-- [ ] Payments and dashboard (revenue chart, aging)
+- [x] Payments and dashboard (revenue chart, aging)
 - [ ] Tests (Vitest, Testing Library, PHPUnit) and GitHub Actions CI
 - [ ] AWS deploy (S3 + CloudFront, EC2 + RDS)

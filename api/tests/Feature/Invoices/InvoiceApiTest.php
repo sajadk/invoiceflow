@@ -181,25 +181,12 @@ class InvoiceApiTest extends TestCase
         $this->actingAs($this->user)->postJson("/api/invoices/{$invoice->id}/send")->assertStatus(409);
     }
 
-    // --- Paid / void / overdue ------------------------------------------------
+    // --- Void / overdue (payments are tested in PaymentApiTest) ---------------
 
-    public function test_sent_invoice_can_be_marked_paid(): void
-    {
-        $invoice = $this->sentInvoice();
-
-        $this->actingAs($this->user)
-            ->postJson("/api/invoices/{$invoice->id}/mark-paid")
-            ->assertOk()
-            ->assertJsonPath('data.status', 'paid');
-
-        $this->actingAs($this->user)->postJson("/api/invoices/{$invoice->id}/void")->assertStatus(409);
-    }
-
-    public function test_drafts_cannot_be_paid_or_voided(): void
+    public function test_drafts_cannot_be_voided(): void
     {
         $id = $this->createDraft()->json('data.id');
 
-        $this->actingAs($this->user)->postJson("/api/invoices/{$id}/mark-paid")->assertStatus(409);
         $this->actingAs($this->user)->postJson("/api/invoices/{$id}/void")->assertStatus(409);
     }
 

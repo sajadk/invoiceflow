@@ -45,7 +45,7 @@ final class SendInvoice
                 ],
             ])->save();
 
-            return $invoice->load(['customer', 'items']);
+            return $invoice->load(Invoice::DETAIL_RELATIONS);
         });
     }
 }

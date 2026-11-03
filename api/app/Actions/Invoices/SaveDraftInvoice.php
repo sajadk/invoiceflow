@@ -52,7 +52,7 @@ final class SaveDraftInvoice
             $invoice->items()->delete();
             $invoice->items()->createMany($lines->all());
 
-            return $invoice->load(['customer', 'items']);
+            return $invoice->load(Invoice::DETAIL_RELATIONS);
         });
     }
 }

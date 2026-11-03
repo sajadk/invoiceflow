@@ -73,7 +73,7 @@ class InvoiceController extends Controller
     {
         Gate::authorize('view', $invoice);
 
-        return new InvoiceResource($invoice->load(['customer', 'items']));
+        return new InvoiceResource($invoice->load(Invoice::DETAIL_RELATIONS));
     }
 
     public function update(InvoiceRequest $request, Invoice $invoice, SaveDraftInvoice $saveDraft): InvoiceResource
@@ -98,26 +98,18 @@ class InvoiceController extends Controller
         return new InvoiceResource($sendInvoice->handle($invoice));
     }
 
-    public function markPaid(Invoice $invoice): InvoiceResource
-    {
-        Gate::authorize('update', $invoice);
-        $invoice->markAsPaid();
-
-        return new InvoiceResource($invoice->load(['customer', 'items']));
-    }
-
     public function void(Invoice $invoice): InvoiceResource
     {
         Gate::authorize('update', $invoice);
         $invoice->markAsVoid();
 
-        return new InvoiceResource($invoice->load(['customer', 'items']));
+        return new InvoiceResource($invoice->load(Invoice::DETAIL_RELATIONS));
     }
 
     public function pdf(Request $request, Invoice $invoice): Response
     {
         Gate::authorize('view', $invoice);
-        $invoice->load(['customer', 'items']);
+        $invoice->load(Invoice::DETAIL_RELATIONS);
 
         $filename = ($invoice->number ?? 'draft-'.$invoice->id).'.pdf';
 

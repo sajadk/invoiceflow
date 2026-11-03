@@ -205,6 +205,11 @@ export function InvoicesPage() {
                         </td>
                         <td className="px-4 py-3 text-right font-medium whitespace-nowrap tabular-nums">
                           {formatAmount(invoice.total)}
+                          {invoice.status === 'sent' && invoice.amount_paid > 0 && (
+                            <span className="block text-xs font-normal text-slate-500">
+                              {formatAmount(invoice.balance_due)} due
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <InvoiceStatusBadge status={invoice.display_status} />
