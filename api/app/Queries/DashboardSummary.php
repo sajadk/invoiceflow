@@ -18,7 +18,8 @@ use Illuminate\Http\Request;
  * "Outstanding" = sent invoices only (fully paid ones have status paid,
  * drafts and voids are never owed). Balance = total - amount_paid.
  * Date maths uses today in the app timezone (Asia/Dubai), passed as a bound
- * parameter rather than MySQL's CURDATE(), so tests can freeze time.
+ * parameter rather than CURDATE(), so tests can freeze time, and the SQL runs on
+ * MySQL (production) and SQLite (tests) alike.
  */
 final class DashboardSummary
 {
@@ -123,7 +124,7 @@ final class DashboardSummary
         $invoiced = $this->issued()
             ->toBase()
             ->whereDate('issue_date', '>=', $start)
-            ->selectRaw("DATE_FORMAT(issue_date, '%Y-%m') as month, SUM(total) as amount")
+            ->selectRaw($this->yearMonth('issue_date').' as month, SUM(total) as amount')
             ->groupBy('month')
             ->pluck('amount', 'month');
 
@@ -131,7 +132,7 @@ final class DashboardSummary
             ->whereBelongsTo($this->user)
             ->toBase()
             ->whereDate('paid_on', '>=', $start)
-            ->selectRaw("DATE_FORMAT(paid_on, '%Y-%m') as month, SUM(amount) as amount")
+            ->selectRaw($this->yearMonth('paid_on').' as month, SUM(amount) as amount')
             ->groupBy('month')
             ->pluck('amount', 'month');
 
@@ -155,21 +156,29 @@ final class DashboardSummary
      */
     private function aging(): array
     {
-        $today = $this->today->toDateString();
+        // Compare due_date with precomputed cutoff dates instead of DATEDIFF():
+        // plain date comparisons work on every database and can use the index.
+        // "1–30 days late" ⇔ due_date >= today − 30, and so on.
+        $cutoffs = [
+            $this->today->toDateString(),
+            $this->today->subDays(30)->toDateString(),
+            $this->today->subDays(60)->toDateString(),
+            $this->today->subDays(90)->toDateString(),
+        ];
 
         $rows = $this->unpaid()
             ->toBase()
             ->selectRaw(
                 "CASE
                     WHEN due_date >= ? THEN 'current'
-                    WHEN DATEDIFF(?, due_date) <= 30 THEN '1_30'
-                    WHEN DATEDIFF(?, due_date) <= 60 THEN '31_60'
-                    WHEN DATEDIFF(?, due_date) <= 90 THEN '61_90'
+                    WHEN due_date >= ? THEN '1_30'
+                    WHEN due_date >= ? THEN '31_60'
+                    WHEN due_date >= ? THEN '61_90'
                     ELSE '90_plus'
                 END as bucket,
                 COUNT(*) as count,
                 SUM(total - amount_paid) as amount",
-                [$today, $today, $today, $today],
+                $cutoffs,
             )
             ->groupBy('bucket')
             ->get()
@@ -184,6 +193,19 @@ final class DashboardSummary
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * "2026-03" from a date column. Date formatting is the one thing SQL dialects
+     * disagree on: MySQL in production, SQLite in the test suite.
+     */
+    private function yearMonth(string $column): string
+    {
+        return match (Invoice::query()->getConnection()->getDriverName()) {
+            'sqlite' => "strftime('%Y-%m', {$column})",
+            'pgsql' => "to_char({$column}, 'YYYY-MM')",
+            default => "DATE_FORMAT({$column}, '%Y-%m')",
+        };
     }
 
     /**
