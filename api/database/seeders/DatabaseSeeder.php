@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Actions\Invoices\SaveDraftInvoice;
 use App\Actions\Invoices\SendInvoice;
+use App\Actions\Payments\RecordPayment;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\User;
@@ -51,6 +52,7 @@ class DatabaseSeeder extends Seeder
         $customers = Customer::whereBelongsTo($demo)->get();
         $saveDraft = app(SaveDraftInvoice::class);
         $send = app(SendInvoice::class);
+        $pay = app(RecordPayment::class);
 
         // Oldest first, so invoice numbers increase with the issue date.
         $issueDates = collect(range(1, 28))
@@ -83,10 +85,22 @@ class DatabaseSeeder extends Seeder
             $ageInDays = (int) $issueDate->diffInDays(Carbon::today());
             match (true) {
                 $index === 5 => $invoice->markAsVoid(),
-                $ageInDays > 40 && fake()->boolean(80) => $invoice->markAsPaid(),
-                $ageInDays > 15 && fake()->boolean(40) => $invoice->markAsPaid(),
+                $ageInDays > 40 && fake()->boolean(75) => $this->pay($pay, $invoice, $invoice->total, $issueDate, $ageInDays),
+                $ageInDays > 15 && fake()->boolean(35) => $this->pay($pay, $invoice, $invoice->total, $issueDate, $ageInDays),
+                // Part-paid: a deposit of roughly half, rounded to whole dirhams.
+                $ageInDays > 5 && fake()->boolean(35) => $this->pay($pay, $invoice, intdiv($invoice->total, 200) * 100, $issueDate, $ageInDays),
                 default => null, // stays sent: some will be overdue
             };
         }
+    }
+
+    private function pay(RecordPayment $pay, Invoice $invoice, int $amount, Carbon $issueDate, int $ageInDays): void
+    {
+        $pay->handle($invoice, [
+            'amount' => $amount,
+            'paid_on' => $issueDate->copy()->addDays(fake()->numberBetween(1, min($ageInDays, 45)))->toDateString(),
+            'method' => fake()->randomElement(['bank_transfer', 'bank_transfer', 'bank_transfer', 'card', 'cheque', 'cash']),
+            'reference' => fake()->boolean(70) ? 'FT'.fake()->numerify('##########') : null,
+        ]);
     }
 }

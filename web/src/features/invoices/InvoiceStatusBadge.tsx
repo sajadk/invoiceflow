@@ -4,6 +4,7 @@ const styles: Record<DisplayStatus, { label: string; className: string }> = {
   draft: { label: 'Draft', className: 'bg-slate-100 text-slate-700 ring-slate-200' },
   sent: { label: 'Sent', className: 'bg-sky-50 text-sky-700 ring-sky-200' },
   overdue: { label: 'Overdue', className: 'bg-rose-50 text-rose-700 ring-rose-200' },
+  partially_paid: { label: 'Partially paid', className: 'bg-amber-50 text-amber-800 ring-amber-200' },
   paid: { label: 'Paid', className: 'bg-emerald-50 text-emerald-700 ring-emerald-200' },
   void: { label: 'Void', className: 'bg-slate-50 text-slate-500 line-through ring-slate-200' },
 }

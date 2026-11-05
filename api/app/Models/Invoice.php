@@ -24,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property int $subtotal
  * @property int $vat_total
  * @property int $total
+ * @property int $amount_paid
  * @property array<string, mixed>|null $billed_to
  * @property string|null $notes
  * @property Carbon|null $sent_at
@@ -32,6 +33,9 @@ use Illuminate\Support\Carbon;
  */
 class Invoice extends Model
 {
+    /** Relations every detail response includes. */
+    public const DETAIL_RELATIONS = ['customer', 'items', 'payments'];
+
     /** Status, number, totals and user_id are set by the app, never mass-assigned from input. */
     protected $fillable = [
         'customer_id',
@@ -46,6 +50,7 @@ class Invoice extends Model
         'subtotal' => 0,
         'vat_total' => 0,
         'total' => 0,
+        'amount_paid' => 0,
     ];
 
     protected function casts(): array
@@ -59,6 +64,7 @@ class Invoice extends Model
             'subtotal' => 'integer',
             'vat_total' => 'integer',
             'total' => 'integer',
+            'amount_paid' => 'integer',
             'sent_at' => 'datetime',
             'paid_at' => 'datetime',
             'voided_at' => 'datetime',
@@ -87,10 +93,23 @@ class Invoice extends Model
         return $this->hasMany(InvoiceItem::class)->orderBy('position');
     }
 
-    /** Sent and past its due date (in the app timezone). */
+    /** @return HasMany<Payment, $this> */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class)->orderBy('paid_on')->orderBy('id');
+    }
+
+    /** Sent (so not fully paid or void) and past its due date, in the app timezone. */
     public function scopeOverdue(Builder $query): void
     {
         $query->where('status', InvoiceStatus::Sent)->whereDate('due_date', '<', today());
+    }
+
+    public function balanceDue(): int
+    {
+        return in_array($this->status, [InvoiceStatus::Sent, InvoiceStatus::Paid], true)
+            ? $this->total - $this->amount_paid
+            : 0;
     }
 
     public function isOverdue(): bool
@@ -98,10 +117,17 @@ class Invoice extends Model
         return $this->status === InvoiceStatus::Sent && $this->due_date->lt(today());
     }
 
-    /** What the UI shows: the stored status, or "overdue". */
+    /**
+     * What the UI shows. Derived, never stored:
+     * overdue beats partially paid, because chasing the money is what matters.
+     */
     public function displayStatus(): string
     {
-        return $this->isOverdue() ? 'overdue' : $this->status->value;
+        return match (true) {
+            $this->isOverdue() => 'overdue',
+            $this->status === InvoiceStatus::Sent && $this->amount_paid > 0 => 'partially_paid',
+            default => $this->status->value,
+        };
     }
 
     /**
@@ -116,19 +142,14 @@ class Invoice extends Model
         ]))['vat_breakdown'];
     }
 
-    public function markAsPaid(): void
-    {
-        if ($this->status !== InvoiceStatus::Sent) {
-            throw new InvoiceStateException('Only sent invoices can be marked as paid.');
-        }
-
-        $this->forceFill(['status' => InvoiceStatus::Paid, 'paid_at' => now()])->save();
-    }
-
     public function markAsVoid(): void
     {
         if ($this->status !== InvoiceStatus::Sent) {
             throw new InvoiceStateException('Only sent, unpaid invoices can be voided. Delete drafts instead.');
+        }
+
+        if ($this->amount_paid > 0) {
+            throw new InvoiceStateException('This invoice has payments recorded against it. Delete them before voiding.');
         }
 
         $this->forceFill(['status' => InvoiceStatus::Void, 'voided_at' => now()])->save();
@@ -139,5 +160,14 @@ class Invoice extends Model
         if ($this->status !== InvoiceStatus::Draft) {
             throw new InvoiceStateException("Only draft invoices can be {$action}.");
         }
+    }
+
+    public function ensureCanReceivePayment(): void
+    {
+        match ($this->status) {
+            InvoiceStatus::Sent => null,
+            InvoiceStatus::Paid => throw new InvoiceStateException('This invoice is already fully paid.'),
+            default => throw new InvoiceStateException('Payments can only be recorded against sent invoices.'),
+        };
     }
 }

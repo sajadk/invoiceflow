@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\InvoiceController;
+use App\Http\Controllers\Api\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 // Public
@@ -17,13 +19,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user'])->name('auth.user');
     Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
 
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
+
     Route::apiResource('customers', CustomerController::class);
 
     Route::apiResource('invoices', InvoiceController::class);
     Route::controller(InvoiceController::class)->prefix('invoices/{invoice}')->name('invoices.')->group(function () {
         Route::post('/send', 'send')->name('send');
-        Route::post('/mark-paid', 'markPaid')->name('mark-paid');
         Route::post('/void', 'void')->name('void');
         Route::get('/pdf', 'pdf')->name('pdf');
     });
+
+    Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+    Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
+    Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
 });

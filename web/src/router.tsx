@@ -11,6 +11,7 @@ import { InvoiceEditPage } from '@/pages/InvoiceEditPage'
 import { InvoicesPage } from '@/pages/InvoicesPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { PaymentsPage } from '@/pages/PaymentsPage'
 import { RegisterPage } from '@/pages/RegisterPage'
 
 /**
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
           { path: 'invoices/new', element: <InvoiceCreatePage /> },
           { path: 'invoices/:invoiceId', element: <InvoiceDetailPage /> },
           { path: 'invoices/:invoiceId/edit', element: <InvoiceEditPage /> },
+          { path: 'payments', element: <PaymentsPage /> },
         ],
       },
     ],

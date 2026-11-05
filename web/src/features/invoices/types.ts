@@ -1,10 +1,11 @@
 import type { Customer } from '@/features/customers/types'
+import type { Payment } from '@/features/payments/types'
 import type { VatBreakdownRow, VatRate } from './money'
 
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'void'
 
-/** What the UI shows. "overdue" is derived by the API (sent + past due). */
-export type DisplayStatus = InvoiceStatus | 'overdue'
+/** What the UI shows, derived by the API: overdue (sent + past due) wins over partially paid. */
+export type DisplayStatus = InvoiceStatus | 'overdue' | 'partially_paid'
 
 export type InvoiceItem = {
   id: number
@@ -38,6 +39,9 @@ export type Invoice = {
   subtotal: number
   vat_total: number
   total: number
+  amount_paid: number
+  /** total - amount_paid for sent/paid invoices; 0 for drafts and voids. */
+  balance_due: number
   notes: string | null
   billed_to: BilledTo | null
   customer: Customer
@@ -51,6 +55,7 @@ export type Invoice = {
 /** As returned by show/create/update and the status actions. */
 export type InvoiceDetail = Invoice & {
   items: InvoiceItem[]
+  payments: Payment[]
   vat_breakdown: VatBreakdownRow[]
 }
 
@@ -78,4 +83,4 @@ export type InvoiceListParams = {
   sort: InvoiceSort
 }
 
-export type InvoiceAction = 'send' | 'mark-paid' | 'void'
+export type InvoiceAction = 'send' | 'void'
