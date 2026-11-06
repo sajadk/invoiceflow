@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { fileURLToPath, URL } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
@@ -23,6 +24,13 @@ export default defineConfig(({ mode }) => {
         '/api': { target: env.VITE_API_PROXY_TARGET ?? 'http://localhost:8000', changeOrigin: true },
         '/sanctum': { target: env.VITE_API_PROXY_TARGET ?? 'http://localhost:8000', changeOrigin: true },
       },
+    },
+    // Vitest reuses this config (aliases, React plugin), so tests resolve '@/…' like the app.
+    test: {
+      environment: 'jsdom',
+      setupFiles: ['./src/test/setup.ts'],
+      css: false,
+      restoreMocks: true,
     },
   }
 })

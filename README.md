@@ -1,8 +1,10 @@
 # InvoiceFlow
 
+[![CI](https://github.com/sajadk/invoiceflow/actions/workflows/ci.yml/badge.svg)](https://github.com/sajadk/invoiceflow/actions/workflows/ci.yml)
+
 VAT invoicing and receivables for UAE small businesses: customers with TRNs, AED invoices with 5% VAT, payments, and an overdue aging dashboard.
 
-**Stack:** React 19 · TypeScript · Vite · Tailwind CSS v4 · TanStack Query · React Router · Laravel · Sanctum · MySQL 8 · Docker
+**Stack:** React 19 · TypeScript · Vite · Tailwind CSS v4 · TanStack Query · React Router · React Hook Form + Zod · Recharts · Laravel · Sanctum · MySQL 8 · Docker · Vitest · GitHub Actions
 
 > 🚧 Work in progress. See the roadmap below.
 
@@ -33,9 +35,20 @@ make up      # starts mysql, api and web
 
 **Demo account:** `demo@invoiceflow.test` / `password`, with 32 sample customers and 28 invoices in every status, including part-paid ones (created by `make seed`).
 
-Other commands: `make test`, `make seed`, `make shell`, `make tinker`, `make fresh`, `make down`.
+Other commands: `make seed`, `make shell`, `make tinker`, `make fresh`, `make down`.
 
-Tests run against a separate `invoiceflow_testing` database (`api/.env.testing`), so they never touch your dev data. On an existing MySQL volume, create it once with `make test-db`.
+## Testing
+
+| Command | What it runs |
+|---|---|
+| `make test` | Laravel feature + unit tests on in-memory SQLite (fast) |
+| `make test-mysql` | the same tests on MySQL, like production (run `make test-db` once first) |
+| `make test-web` | TypeScript typecheck, ESLint and Vitest |
+| `make test-all` | everything CI runs |
+
+- **Backend:** PHPUnit feature tests for every endpoint (auth, ownership 404s, validation, state transitions, payments, dashboard figures with a frozen clock), plus unit tests for the VAT calculator.
+- **Frontend:** Vitest + Testing Library + MSW. Components are tested the way a user uses them (labels, typing, clicking), against mocked API responses. `money.test.ts` runs **the same VAT and rounding cases** as `InvoiceCalculatorTest.php`, so browser and server maths can't drift apart.
+- **CI** (GitHub Actions, every PR): API tests on SQLite **and** MySQL, then typecheck, lint, Vitest and a production build.
 
 ## Authentication
 
@@ -107,5 +120,5 @@ Server-side search (name, email, TRN), emirate filter, sorting and pagination. E
 - [x] Customers (TRN validation, server-side pagination and search)
 - [x] Invoices with line items, live VAT totals, statuses, PDF
 - [x] Payments and dashboard (revenue chart, aging)
-- [ ] Tests (Vitest, Testing Library, PHPUnit) and GitHub Actions CI
+- [x] Tests (Vitest, Testing Library, PHPUnit) and GitHub Actions CI
 - [ ] AWS deploy (S3 + CloudFront, EC2 + RDS)
