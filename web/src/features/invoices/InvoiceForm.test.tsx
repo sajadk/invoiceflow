@@ -10,6 +10,13 @@ import { InvoiceForm } from './InvoiceForm'
 import { formatMoney } from './money'
 
 /**
+ * Intl puts a non-breaking space between "AED" and the number. Testing Library
+ * normalises the page text (any whitespace → one space) but not the string we
+ * search for, so the expected text gets the same treatment.
+ */
+const money = (fils: number) => formatMoney(fils).replace(/\s+/g, ' ')
+
+/**
  * Tested the way a user uses it: find fields by their labels, type, click, and
  * check what appears on screen and what is sent to the (mocked) API. No test
  * reaches into component state, so refactoring the internals won't break them.
@@ -43,14 +50,14 @@ describe('InvoiceForm', () => {
     await fillValidInvoice(user)
 
     // 1.5 × AED 1,000 = 1,500 + 5% VAT = 1,575
-    expect(screen.getByText(formatMoney(150000))).toBeInTheDocument()
-    expect(screen.getByText(formatMoney(7500))).toBeInTheDocument()
-    expect(screen.getByText(formatMoney(157500))).toBeInTheDocument()
+    expect(screen.getByText(money(150000))).toBeInTheDocument()
+    expect(screen.getByText(money(7500))).toBeInTheDocument()
+    expect(screen.getByText(money(157500))).toBeInTheDocument()
 
     // Switching the line to zero-rated removes the VAT.
     await user.selectOptions(screen.getByLabelText('VAT treatment'), 'zero')
-    expect(screen.queryByText(formatMoney(157500))).not.toBeInTheDocument()
-    expect(screen.getAllByText(formatMoney(150000)).length).toBeGreaterThan(0)
+    expect(screen.queryByText(money(157500))).not.toBeInTheDocument()
+    expect(screen.getAllByText(money(150000)).length).toBeGreaterThan(0)
   })
 
   it('shows validation errors and sends nothing when the form is incomplete', async () => {
