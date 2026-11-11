@@ -1,0 +1,21 @@
+# Only what the production API image needs goes into the build context.
+.git
+.github
+docs
+deploy
+web
+docker/mysql
+**/node_modules
+**/.DS_Store
+
+api/vendor
+api/.env
+api/.env.*
+!api/.env.example
+api/tests
+api/phpunit.xml
+api/bootstrap/cache/*.php
+api/storage/logs/*
+api/storage/framework/cache/data/*
+api/storage/framework/sessions/*
+api/storage/framework/views/*

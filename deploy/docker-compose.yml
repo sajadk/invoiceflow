@@ -1,0 +1,30 @@
+# Production stack on the EC2 instance (/opt/invoiceflow/docker-compose.yml).
+# update.sh refreshes this file from the repo on every deploy.
+#
+# - The database is the shared RDS instance (credentials in .env), so only the API runs here.
+# - Port 8080 is reachable only from CloudFront (security group); host nginx keeps port 80
+#   for car-listing-api.
+name: invoiceflow
+
+services:
+  api:
+    image: ghcr.io/sajadk/invoiceflow-api:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Migrations + config/route/view cache on every start (serversideup/php)
+      AUTORUN_ENABLED: "true"
+      PHP_OPCACHE_ENABLE: "1"
+      # t3.micro: a few PHP workers, started on demand, instead of the default 20
+      PHP_FPM_PM_CONTROL: ondemand
+      PHP_FPM_PM_MAX_CHILDREN: "4"
+      PHP_MEMORY_LIMIT: 128M
+    ports:
+      - "8080:8080"
+    # Hard cap so InvoiceFlow can never starve car-listing-api of memory
+    mem_limit: 320m
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"

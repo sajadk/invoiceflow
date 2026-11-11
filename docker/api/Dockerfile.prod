@@ -1,0 +1,31 @@
+# syntax=docker/dockerfile:1
+#
+# Production image for the Laravel API. Built by GitHub Actions and pushed to
+# ghcr.io; the server only pulls it, so the small EC2 instance never compiles anything.
+# Build context is the repo root:  docker build -f docker/api/Dockerfile.prod .
+
+# ---- 1. PHP dependencies (no dev packages), in a throwaway stage -------------
+FROM composer:2 AS vendor
+WORKDIR /app
+
+# Lock files first: this layer is cached until dependencies change.
+COPY api/composer.json api/composer.lock ./
+RUN composer install --no-dev --no-interaction --no-progress --prefer-dist \
+    --no-scripts --no-autoloader --ignore-platform-reqs
+
+COPY api/ ./
+RUN composer dump-autoload --no-dev --optimize --no-scripts
+
+# ---- 2. Runtime: NGINX + PHP-FPM, non-root, listening on 8080 ---------------
+# serversideup/php: production defaults, configured by environment variables,
+# and Laravel "autorun" (migrations, config/route/view cache) on start.
+FROM serversideup/php:8.3-fpm-nginx
+
+USER root
+RUN install-php-extensions intl bcmath
+USER www-data
+
+COPY --chown=www-data:www-data --from=vendor /app /var/www/html
+
+# Package discovery normally runs as a Composer script; run it once the extensions exist.
+RUN php artisan package:discover --ansi
