@@ -4,6 +4,8 @@
 
 VAT invoicing and receivables for UAE small businesses: customers with TRNs, AED invoices with 5% VAT, payments, and an overdue aging dashboard.
 
+**Live demo:** _https://dXXXXXXXXXXXXX.cloudfront.net_ (log in with `demo@invoiceflow.test` / `password`)
+
 **Stack:** React 19 · TypeScript · Vite · Tailwind CSS v4 · TanStack Query · React Router · React Hook Form + Zod · Recharts · Laravel · Sanctum · MySQL 8 · Docker · Vitest · GitHub Actions
 
 > 🚧 Work in progress. See the roadmap below.
@@ -113,6 +115,21 @@ Server-side search (name, email, TRN), emirate filter, sorting and pagination. E
 - `amount_paid` is a running total kept in step inside a transaction with the invoice row locked, so two simultaneous payments can't overpay an invoice.
 - **Dashboard** computed in SQL: outstanding and overdue balances, collected this month vs last, output VAT this quarter, 12-month invoiced vs collected chart (Recharts), receivables aging (current / 1–30 / 31–60 / 61–90 / 90+), top debtors and recent payments.
 
+## Deployment (AWS, Mumbai)
+
+```
+Browser ─HTTPS─▶ CloudFront ─┬─ /*                 → S3 (React build)
+                             └─ /api/*, /sanctum/* → EC2 :8080 (Laravel in Docker) ─▶ RDS MySQL 8.4
+```
+
+- **CloudFront** serves the SPA from a private **S3** bucket and forwards API calls to the server, so the browser sees one HTTPS origin and Sanctum's cookies stay first-party.
+- **EC2** runs the API as a single container (`serversideup/php` fpm-nginx, built in CI and pulled from **ghcr.io**), memory-capped beside another app on the same instance.
+- **RDS MySQL** with a dedicated, least-privileged database user.
+- The origin accepts only CloudFront's IP ranges **and** a secret origin header.
+- **GitHub Actions** deploys on every green merge to `main`: build image → **AWS Systems Manager** runs the update on EC2 (no SSH) → upload React build → invalidate CloudFront → smoke test. AWS access uses **OIDC** short-lived credentials, with no stored keys.
+
+Full setup, operations and teardown: [`docs/deployment.md`](docs/deployment.md).
+
 ## Roadmap
 
 - [x] Scaffold: Docker, Laravel API, React + TS + Tailwind, end-to-end health check
@@ -121,4 +138,4 @@ Server-side search (name, email, TRN), emirate filter, sorting and pagination. E
 - [x] Invoices with line items, live VAT totals, statuses, PDF
 - [x] Payments and dashboard (revenue chart, aging)
 - [x] Tests (Vitest, Testing Library, PHPUnit) and GitHub Actions CI
-- [ ] AWS deploy (S3 + CloudFront, EC2 + RDS)
+- [x] AWS deploy (S3 + CloudFront, EC2 + RDS)
