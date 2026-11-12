@@ -18,9 +18,15 @@ env:
   AWS_REGION: ap-south-1
 
 jobs:
-  image:
+    image:
     name: Build and push API image
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    # Only after CI passed on a push to this repo's main (never a PR, never a fork),
+    # or when started by hand (which requires write access).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     permissions:
       contents: read
