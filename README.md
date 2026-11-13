@@ -4,11 +4,17 @@
 
 VAT invoicing and receivables for UAE small businesses: customers with TRNs, AED invoices with 5% VAT, payments, and an overdue aging dashboard.
 
-**Live demo:** _https://dXXXXXXXXXXXXX.cloudfront.net_ (log in with `demo@invoiceflow.test` / `password`)
+**Live demo:** https://dg9yvzj444fyz.cloudfront.net (log in with `demo@invoiceflow.test` / `password`)
 
 **Stack:** React 19 · TypeScript · Vite · Tailwind CSS v4 · TanStack Query · React Router · React Hook Form + Zod · Recharts · Laravel · Sanctum · MySQL 8 · Docker · Vitest · GitHub Actions
 
 > 🚧 Work in progress. See the roadmap below.
+
+## Screenshots
+
+| Dashboard | Invoice editor | Invoice |
+|---|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Invoice editor with live VAT totals](docs/screenshots/invoice-editor.png) | ![Sent invoice with payments](docs/screenshots/invoice.png) |
 
 ## Architecture
 
