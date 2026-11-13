@@ -26,8 +26,16 @@ echo 'vm.swappiness=10' > /etc/sysctl.d/99-invoiceflow-swap.conf
 sysctl -q -p /etc/sysctl.d/99-invoiceflow-swap.conf
 
 echo "==> Docker Engine + Compose (Ubuntu packages)"
+# One broken third-party source (e.g. a PPA with no release for this Ubuntu version)
+# makes `apt-get update` exit non-zero even though Ubuntu's own lists downloaded fine.
+apt_update() {
+  if ! apt-get update -q; then
+    echo "    WARNING: apt-get update reported errors (see above), probably a third-party" >&2
+    echo "    source in /etc/apt/sources.list.d/. Continuing with Ubuntu's own packages." >&2
+  fi
+}
 if ! command -v docker >/dev/null 2>&1; then
-  apt-get update -q
+  apt_update
   apt-get install -y -q docker.io
 fi
 if ! docker compose version >/dev/null 2>&1; then

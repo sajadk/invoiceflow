@@ -142,7 +142,9 @@ cd /opt/invoiceflow && sudo ./update.sh
 ### 7. Let GitHub Actions deploy (OIDC)
 
 1. IAM → **Identity providers** → *Add provider* → **OpenID Connect**: URL `https://token.actions.githubusercontent.com`, audience `sts.amazonaws.com`.
-2. IAM → **Roles** → *Create role* → **Custom trust policy** → paste [`deploy/aws/github-deploy-trust-policy.json`](../deploy/aws/github-deploy-trust-policy.json) with your `ACCOUNT_ID`. Only workflows on `main` of `sajadk/invoiceflow` can assume it.
+2. IAM → **Roles** → *Create role* → **Custom trust policy** → paste [`deploy/aws/github-deploy-trust-policy.json`](../deploy/aws/github-deploy-trust-policy.json) with your `ACCOUNT_ID`. Only workflows on `main` of this exact repository can assume it.
+
+   > **The `sub` value must match GitHub's token exactly.** Newer GitHub tokens include the owner's and repository's numeric IDs: `repo:sajadk@3974090/invoiceflow@1430177372:ref:refs/heads/main`, not `repo:sajadk/invoiceflow:ref:…`. The IDs pin the role to this repository, so a deleted-and-recreated repo with the same name couldn't use it. If the deploy fails with *Not authorized to perform sts:AssumeRoleWithWebIdentity*, open **CloudTrail → Event history**, filter on `AssumeRoleWithWebIdentity`, and copy the `userName` value from the failed event into the policy's `sub`. (*Request ARN is invalid* means `AWS_DEPLOY_ROLE_ARN` holds the identity provider's ARN instead of the role's.)
 3. Skip the managed policies, name the role `invoiceflow-github-deploy`, create it, then *Add permissions → Create inline policy → JSON* → paste [`deploy/aws/github-deploy-permissions.json`](../deploy/aws/github-deploy-permissions.json) with your values filled in.
 4. GitHub → repo **Settings → Secrets and variables → Actions → Variables** → add:
 
