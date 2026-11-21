@@ -4,6 +4,7 @@ namespace App\Queries;
 
 use App\Enums\InvoiceStatus;
 use App\Http\Resources\PaymentResource;
+use App\Models\Bill;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\User;
@@ -56,12 +57,7 @@ final class DashboardSummary
                     $this->today->subMonthNoOverflow()->endOfMonth(),
                 ),
             ],
-            'vat' => [
-                'period' => sprintf('Q%d %d', $this->today->quarter, $this->today->year),
-                'amount' => (int) $this->issued()
-                    ->whereBetween('issue_date', [$this->today->startOfQuarter()->toDateString(), $this->today->endOfQuarter()->toDateString()])
-                    ->sum('vat_total'),
-            ],
+            'vat' => $this->vatForQuarter(),
             'monthly' => $this->monthly(),
             'aging' => $this->aging(),
             'top_debtors' => $this->topDebtors(),
@@ -74,6 +70,28 @@ final class DashboardSummary
                     ->limit(5)
                     ->get()
             )->resolve($request),
+        ];
+    }
+
+    /**
+     * The quarter's VAT position, as on a UAE VAT return:
+     * output VAT on sales invoices issued − input VAT on supplier bills received
+     * = VAT payable (negative: reclaimable). Both by document date, not payment date.
+     *
+     * @return array{period: string, output: int, input: int, payable: int}
+     */
+    private function vatForQuarter(): array
+    {
+        [$from, $to] = [$this->today->startOfQuarter(), $this->today->endOfQuarter()];
+
+        $output = (int) $this->inPeriod($this->issued(), 'issue_date', $from, $to)->sum('vat_total');
+        $input = (int) $this->inPeriod(Bill::query()->whereBelongsTo($this->user), 'issue_date', $from, $to)->sum('vat_total');
+
+        return [
+            'period' => sprintf('Q%d %d', $this->today->quarter, $this->today->year),
+            'output' => $output,
+            'input' => $input,
+            'payable' => $output - $input,
         ];
     }
 
@@ -106,10 +124,22 @@ final class DashboardSummary
 
     private function collectedBetween(CarbonImmutable $from, CarbonImmutable $to): int
     {
-        return (int) Payment::query()
-            ->whereBelongsTo($this->user)
-            ->whereBetween('paid_on', [$from->toDateString(), $to->toDateString()])
-            ->sum('amount');
+        return (int) $this->inPeriod(Payment::query()->whereBelongsTo($this->user), 'paid_on', $from, $to)->sum('amount');
+    }
+
+    /**
+     * Inclusive date range. whereDate() compares the date part only, which matters on
+     * SQLite (tests), where Eloquent stores dates as "Y-m-d 00:00:00" strings: a plain
+     * whereBetween would miss rows dated on the last day of the period.
+     *
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
+     * @return Builder<TModel>
+     */
+    private function inPeriod(Builder $query, string $column, CarbonImmutable $from, CarbonImmutable $to): Builder
+    {
+        return $query->whereDate($column, '>=', $from->toDateString())->whereDate($column, '<=', $to->toDateString());
     }
 
     /**

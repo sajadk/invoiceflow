@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Dashboard;
 
+use App\Actions\Bills\SaveBill;
 use App\Actions\Invoices\SaveDraftInvoice;
 use App\Actions\Invoices\SendInvoice;
 use App\Actions\Payments\RecordPayment;
@@ -45,6 +46,16 @@ class DashboardTest extends TestCase
         return $send ? app(SendInvoice::class)->handle($invoice) : $invoice;
     }
 
+    private function bill(string $number, string $issued, int $unitPrice): void
+    {
+        app(SaveBill::class)->handle($this->user, [
+            'supplier_name' => 'Example Office Supplies LLC',
+            'supplier_invoice_number' => $number,
+            'issue_date' => $issued,
+            'items' => [['description' => 'Supplies', 'quantity' => 1, 'unit_price' => $unitPrice, 'vat_rate' => 'standard']],
+        ]);
+    }
+
     private function pay(Invoice $invoice, int $amount, string $on): void
     {
         app(RecordPayment::class)->handle($invoice, ['amount' => $amount, 'paid_on' => $on, 'method' => 'bank_transfer']);
@@ -69,6 +80,11 @@ class DashboardTest extends TestCase
         // Never counted: a draft, a void invoice, and another user's invoice
         $this->invoice($gulf, '2026-03-02', '2026-03-30', send: false);
         $this->invoice($gulf, '2026-02-01', '2026-02-15')->markAsVoid();
+
+        // Supplier bills: input VAT. Dated on the quarter's last day still counts;
+        // last quarter's bill doesn't.
+        $this->bill('SI-1', '2026-03-31', 20000); // AED 10.00 VAT
+        $this->bill('SI-2', '2025-12-28', 40000); // previous quarter
         $stranger = User::factory()->create();
         app(SendInvoice::class)->handle(app(SaveDraftInvoice::class)->handle($stranger, [
             'customer_id' => Customer::factory()->for($stranger)->create()->id,
@@ -86,7 +102,10 @@ class DashboardTest extends TestCase
             ->assertJsonPath('data.collected.this_month', 105000)
             ->assertJsonPath('data.collected.last_month', 5000)
             ->assertJsonPath('data.vat.period', 'Q1 2026')
-            ->assertJsonPath('data.vat.amount', 15000) // three issued invoices × AED 50 VAT
+            // Output: three issued invoices × AED 50. Input: one bill this quarter, AED 10.
+            ->assertJsonPath('data.vat.output', 15000)
+            ->assertJsonPath('data.vat.input', 1000)
+            ->assertJsonPath('data.vat.payable', 14000)
             ->assertJsonCount(12, 'data.monthly')
             ->assertJsonPath('data.monthly.11', ['month' => '2026-03', 'invoiced' => 210000, 'collected' => 105000])
             ->assertJsonPath('data.monthly.10', ['month' => '2026-02', 'invoiced' => 0, 'collected' => 5000])

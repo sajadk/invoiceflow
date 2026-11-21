@@ -41,7 +41,7 @@ make up      # starts mysql, api and web
 | API health | http://localhost:8000/api/health |
 | MySQL | `localhost:3307` (or `MYSQL_HOST_PORT` from a root `.env`) · user `invoiceflow` / `secret` |
 
-**Demo account:** `demo@invoiceflow.test` / `password`, with 32 sample customers and 28 invoices in every status, including part-paid ones (created by `make seed`).
+**Demo account:** `demo@invoiceflow.test` / `password`, with 32 sample customers, 28 invoices in every status (including part-paid ones) and 18 supplier bills, all with clearly fictional company names (created by `make seed`).
 
 Other commands: `make seed`, `make shell`, `make tinker`, `make fresh`, `make down`.
 
@@ -85,6 +85,10 @@ On the frontend, an `AuthProvider` (React Context backed by TanStack Query) expo
 | POST | `/api/invoices/{id}/payments` | session (sent invoices only) |
 | GET | `/api/payments?search=&method=&from=&to=&page=` | session |
 | DELETE | `/api/payments/{id}` | session |
+| GET | `/api/bills?status=overdue&search=&sort=-issue_date&page=` | session |
+| POST | `/api/bills` | session |
+| GET / PUT / DELETE | `/api/bills/{id}` | session (PUT/DELETE unpaid only) |
+| POST | `/api/bills/{id}/mark-paid` · `/mark-unpaid` | session |
 | GET | `/api/dashboard` | session |
 | GET | `/api/invoices/{id}/pdf` | session |
 
@@ -121,6 +125,12 @@ Server-side search (name, email, TRN), emirate filter, sorting and pagination. E
 - `amount_paid` is a running total kept in step inside a transaction with the invoice row locked, so two simultaneous payments can't overpay an invoice.
 - **Dashboard** computed in SQL: outstanding and overdue balances, collected this month vs last, output VAT this quarter, 12-month invoiced vs collected chart (Recharts), receivables aging (current / 1–30 / 31–60 / 61–90 / 90+), top debtors and recent payments.
 
+## Bills & VAT return
+
+- **Bills** record the invoices suppliers send you: supplier name and TRN, their invoice number, dates, and line items with the same VAT treatments and the same integer-fils calculator as sales invoices.
+- Recording the same supplier invoice number twice is refused, because it would claim the same input VAT twice.
+- The dashboard's **VAT card** shows the quarter's position as on a UAE VAT return: **output VAT** on invoices issued − **input VAT** on bills received = **VAT payable** (or reclaimable).
+
 ## Deployment (AWS, Mumbai)
 
 ```
@@ -145,3 +155,6 @@ Full setup, operations and teardown: [`docs/deployment.md`](docs/deployment.md).
 - [x] Payments and dashboard (revenue chart, aging)
 - [x] Tests (Vitest, Testing Library, PHPUnit) and GitHub Actions CI
 - [x] AWS deploy (S3 + CloudFront, EC2 + RDS)
+- [x] Bills (supplier invoices) and quarterly VAT payable
+- [ ] AI invoice capture: upload a supplier invoice, review the extracted bill
+- [ ] Hardening: Elastic IP, TLS from CloudFront to the origin, custom domain

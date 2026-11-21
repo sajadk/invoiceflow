@@ -73,9 +73,10 @@ export function DashboardPage() {
               to="/payments"
             />
             <StatTile
-              label={`VAT on invoices · ${data.vat.period}`}
-              value={formatMoney(data.vat.amount)}
-              detail="Output VAT on invoices issued this quarter"
+              label={`${data.vat.payable < 0 ? 'VAT reclaimable' : 'VAT payable'} · ${data.vat.period}`}
+              value={formatMoney(Math.abs(data.vat.payable))}
+              detail={`Output ${formatMoney(data.vat.output)} − input ${formatMoney(data.vat.input)}`}
+              to="/bills"
             />
           </div>
 

@@ -9,7 +9,8 @@ export type DashboardSummary = {
   outstanding: Balance
   overdue: Balance
   collected: { this_month: number; last_month: number }
-  vat: { period: string; amount: number }
+  /** Output VAT (sales) − input VAT (bills) = payable; negative means reclaimable. */
+  vat: { period: string; output: number; input: number; payable: number }
   monthly: { month: string; invoiced: number; collected: number }[]
   aging: { bucket: 'current' | '1_30' | '31_60' | '61_90' | '90_plus'; label: string; count: number; amount: number }[]
   top_debtors: { customer_id: number; name: string; amount: number; invoices: number }[]

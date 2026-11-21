@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BillController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\HealthController;
@@ -31,6 +32,12 @@ Route::middleware(VerifyOriginSecret::class)->group(function () {
             Route::post('/send', 'send')->name('send');
             Route::post('/void', 'void')->name('void');
             Route::get('/pdf', 'pdf')->name('pdf');
+        });
+
+        Route::apiResource('bills', BillController::class);
+        Route::controller(BillController::class)->prefix('bills/{bill}')->name('bills.')->group(function () {
+            Route::post('/mark-paid', 'markPaid')->name('mark-paid');
+            Route::post('/mark-unpaid', 'markUnpaid')->name('mark-unpaid');
         });
 
         Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');

@@ -3,6 +3,10 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { GuestRoute } from '@/components/routing/GuestRoute'
 import { ProtectedRoute } from '@/components/routing/ProtectedRoute'
+import { BillCreatePage } from '@/pages/BillCreatePage'
+import { BillDetailPage } from '@/pages/BillDetailPage'
+import { BillEditPage } from '@/pages/BillEditPage'
+import { BillsPage } from '@/pages/BillsPage'
 import { CustomersPage } from '@/pages/CustomersPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { InvoiceCreatePage } from '@/pages/InvoiceCreatePage'
@@ -45,6 +49,10 @@ export const router = createBrowserRouter([
           { path: 'invoices/:invoiceId', element: <InvoiceDetailPage /> },
           { path: 'invoices/:invoiceId/edit', element: <InvoiceEditPage /> },
           { path: 'payments', element: <PaymentsPage /> },
+          { path: 'bills', element: <BillsPage /> },
+          { path: 'bills/new', element: <BillCreatePage /> },
+          { path: 'bills/:billId', element: <BillDetailPage /> },
+          { path: 'bills/:billId/edit', element: <BillEditPage /> },
         ],
       },
     ],
