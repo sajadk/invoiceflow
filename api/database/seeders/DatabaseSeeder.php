@@ -2,12 +2,16 @@
 
 namespace Database\Seeders;
 
+use App\Actions\Bills\SaveBill;
 use App\Actions\Invoices\SaveDraftInvoice;
 use App\Actions\Invoices\SendInvoice;
 use App\Actions\Payments\RecordPayment;
+use App\Models\Bill;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\User;
+use Database\Seeders\Data\DemoCompanies;
+use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
@@ -27,6 +31,18 @@ class DatabaseSeeder extends Seeder
         ['Copywriting (per 1,000 words)', 35000, 'standard', 3],
     ];
 
+    /** Things the demo business buys: [description, unit price in fils, VAT rate, quantity] */
+    private const EXPENSES = [
+        ['Office supplies', 42000, 'standard', 1],
+        ['Cloud hosting (monthly)', 95000, 'standard', 1],
+        ['Business internet & phone lines', 61000, 'standard', 1],
+        ['International freight (export)', 180000, 'zero', 1],
+        ['Printing: brochures (per 100)', 35000, 'standard', 4],
+        ['Office cleaning & maintenance', 150000, 'standard', 1],
+        ['Design software licences (per seat)', 22000, 'standard', 3],
+        ['Team lunch catering', 85000, 'standard', 1],
+    ];
+
     /**
      * Demo account shown on the login page so reviewers can try the app without registering.
      * Safe to re-run: only adds sample data the first time.
@@ -39,11 +55,56 @@ class DatabaseSeeder extends Seeder
         );
 
         if (! Customer::whereBelongsTo($demo)->exists()) {
-            Customer::factory()->count(32)->for($demo)->create();
+            $names = collect(DemoCompanies::customers())->shuffle()->take(32)->values();
+            Customer::factory()
+                ->count(32)
+                ->for($demo)
+                ->state(new Sequence(fn (Sequence $sequence) => [
+                    'name' => $names[$sequence->index],
+                    'email' => DemoCompanies::emailFor($names[$sequence->index]),
+                ]))
+                ->create();
         }
 
         if (! Invoice::whereBelongsTo($demo)->exists()) {
             $this->seedInvoices($demo);
+        }
+
+        if (! Bill::whereBelongsTo($demo)->exists()) {
+            $this->seedBills($demo);
+        }
+    }
+
+    /** Supplier bills across the last five months; most older ones paid. */
+    private function seedBills(User $demo): void
+    {
+        $saveBill = app(SaveBill::class);
+        $trns = collect(DemoCompanies::SUPPLIERS)->mapWithKeys(fn (string $name) => [$name => DemoCompanies::sampleTrn()]);
+
+        foreach (range(1, 18) as $index) {
+            $issueDate = Carbon::today()->subDays(fake()->numberBetween(0, 150));
+            $supplier = fake()->randomElement(DemoCompanies::SUPPLIERS);
+
+            $bill = $saveBill->handle($demo, [
+                'supplier_name' => $supplier,
+                // One supplier isn't VAT-registered, so the form shows that case too.
+                'supplier_trn' => $supplier === 'Placeholder Catering LLC' ? null : $trns[$supplier],
+                'supplier_invoice_number' => sprintf('SI-%05d', 1000 + $index),
+                'issue_date' => $issueDate->toDateString(),
+                'due_date' => $issueDate->copy()->addDays(fake()->randomElement([15, 30]))->toDateString(),
+                'notes' => null,
+                'items' => collect(fake()->randomElements(self::EXPENSES, fake()->numberBetween(1, 3)))
+                    ->map(fn (array $line) => [
+                        'description' => $line[0],
+                        'unit_price' => $line[1],
+                        'vat_rate' => $line[2],
+                        'quantity' => $line[3],
+                    ])->all(),
+            ]);
+
+            if ($issueDate->diffInDays(Carbon::today()) > 20 && fake()->boolean(80)) {
+                $bill->markAsPaid();
+            }
         }
     }
 

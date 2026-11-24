@@ -1,10 +1,11 @@
 import { z } from 'zod'
 import { filsToInput, formatQuantity, milliToQuantity, parseMoney, parseQuantityMilli, VAT_RATE_VALUES } from './money'
-import type { InvoiceDetail, InvoicePayload } from './types'
+import type { InvoiceDetail, InvoiceItem, InvoicePayload } from './types'
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Pick a date.')
+export const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Pick a date.')
 
-const lineItemSchema = z.object({
+/** Shared by sales invoices and supplier bills (same rules as ValidatesLineItems.php). */
+export const lineItemSchema = z.object({
   description: z.string().trim().min(1, 'Describe this item.').max(500),
   quantity: z.string().refine((value) => {
     const milli = parseQuantityMilli(value)
@@ -38,18 +39,33 @@ export function newInvoiceForm(issueDate: string, dueDate: string): InvoiceFormV
   return { customer_id: '', issue_date: issueDate, due_date: dueDate, notes: '', items: [{ ...emptyLine }] }
 }
 
+/** API line items (fils, "1.500") → form strings ("15.00", "1.5"). */
+export function itemsToForm(items: InvoiceItem[]): LineItemFormValues[] {
+  return items.map((item) => ({
+    description: item.description,
+    quantity: formatQuantity(item.quantity),
+    unit_price: filsToInput(item.unit_price),
+    vat_rate: item.vat_rate,
+  }))
+}
+
+/** Form strings → API line items: integer fils and 3-decimal quantity strings. */
+export function itemsToPayload(items: LineItemFormValues[]): InvoicePayload['items'] {
+  return items.map((item) => ({
+    description: item.description.trim(),
+    quantity: milliToQuantity(parseQuantityMilli(item.quantity) ?? 0),
+    unit_price: parseMoney(item.unit_price) ?? 0,
+    vat_rate: item.vat_rate,
+  }))
+}
+
 export function toFormValues(invoice: InvoiceDetail): InvoiceFormValues {
   return {
     customer_id: String(invoice.customer.id),
     issue_date: invoice.issue_date,
     due_date: invoice.due_date,
     notes: invoice.notes ?? '',
-    items: invoice.items.map((item) => ({
-      description: item.description,
-      quantity: formatQuantity(item.quantity),
-      unit_price: filsToInput(item.unit_price),
-      vat_rate: item.vat_rate,
-    })),
+    items: itemsToForm(invoice.items),
   }
 }
 
@@ -59,11 +75,6 @@ export function toPayload(values: InvoiceFormValues): InvoicePayload {
     issue_date: values.issue_date,
     due_date: values.due_date,
     notes: values.notes.trim() === '' ? null : values.notes.trim(),
-    items: values.items.map((item) => ({
-      description: item.description.trim(),
-      quantity: milliToQuantity(parseQuantityMilli(item.quantity) ?? 0),
-      unit_price: parseMoney(item.unit_price) ?? 0,
-      vat_rate: item.vat_rate,
-    })),
+    items: itemsToPayload(values.items),
   }
 }

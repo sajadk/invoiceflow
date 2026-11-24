@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Enums\InvoiceStatus;
 use App\Exceptions\InvoiceStateException;
-use App\Support\InvoiceCalculator;
+use App\Models\Concerns\HasVatBreakdown;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +33,8 @@ use Illuminate\Support\Carbon;
  */
 class Invoice extends Model
 {
+    use HasVatBreakdown;
+
     /** Relations every detail response includes. */
     public const DETAIL_RELATIONS = ['customer', 'items', 'payments'];
 
@@ -128,18 +130,6 @@ class Invoice extends Model
             $this->status === InvoiceStatus::Sent && $this->amount_paid > 0 => 'partially_paid',
             default => $this->status->value,
         };
-    }
-
-    /**
-     * @return array<string, array{rate: string, label: string, percent: int, taxable: int, vat: int}>
-     */
-    public function vatBreakdown(): array
-    {
-        return InvoiceCalculator::totals($this->items->map(fn (InvoiceItem $item) => [
-            'quantity' => $item->quantity,
-            'unit_price' => $item->unit_price,
-            'vat_rate' => $item->vat_rate,
-        ]))['vat_breakdown'];
     }
 
     public function markAsVoid(): void

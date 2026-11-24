@@ -12,6 +12,7 @@ const navItems: NavItem[] = [
   { label: 'Customers', to: '/customers', ready: true },
   { label: 'Invoices', to: '/invoices', ready: true },
   { label: 'Payments', to: '/payments', ready: true },
+  { label: 'Bills', to: '/bills', ready: true },
 ]
 
 export function AppLayout() {
