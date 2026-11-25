@@ -4,6 +4,7 @@
 # - The database is the shared RDS instance (credentials in .env), so only the API runs here.
 # - Port 8080 is reachable only from CloudFront (security group); host nginx keeps port 80
 #   for car-listing-api.
+# - The worker runs queued jobs (AI invoice capture) from the same image.
 name: invoiceflow
 
 services:
@@ -23,6 +24,31 @@ services:
       - "8080:8080"
     # Hard cap so InvoiceFlow can never starve car-listing-api of memory
     mem_limit: 320m
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  # Same image, different command: no NGINX/PHP-FPM, just the queue worker.
+  worker:
+    image: ghcr.io/sajadk/invoiceflow-api:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PHP_OPCACHE_ENABLE: "1"
+      PHP_MEMORY_LIMIT: 128M
+    # --memory/--max-time: the worker exits now and then and Docker restarts it fresh.
+    command: ["php", "/var/www/html/artisan", "queue:work", "database", "--tries=1", "--timeout=150", "--memory=96", "--max-time=3600", "--sleep=3"]
+    stop_signal: SIGTERM
+    healthcheck:
+      test: ["CMD", "healthcheck-queue"]
+      start_period: 10s
+    # Start after the api container has run the migrations.
+    depends_on:
+      api:
+        condition: service_healthy
+    mem_limit: 192m
     logging:
       driver: json-file
       options:

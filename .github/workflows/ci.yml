@@ -54,6 +54,10 @@ jobs:
           extensions: pdo_mysql, pdo_sqlite, bcmath, intl, zip
           coverage: none
 
+      # pdftoppm/pdfinfo for the AI capture PDF tests (the Docker images install it too)
+      - name: Install poppler-utils
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends poppler-utils
+
       - name: Install Composer dependencies
         uses: ramsey/composer-install@v3
         with:

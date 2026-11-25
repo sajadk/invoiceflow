@@ -3,7 +3,7 @@
 FROM php:8.3-cli-bookworm
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git unzip libzip-dev libicu-dev \
+    && apt-get install -y --no-install-recommends git unzip libzip-dev libicu-dev poppler-utils \
     && docker-php-ext-install pdo_mysql zip bcmath intl \
     && rm -rf /var/lib/apt/lists/*
 

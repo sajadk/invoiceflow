@@ -6,4 +6,7 @@ export const billKeys = {
   list: (params: BillListParams) => [...billKeys.lists(), params] as const,
   details: () => [...billKeys.all, 'detail'] as const,
   detail: (id: number) => [...billKeys.details(), id] as const,
+  // AI capture
+  captureUsage: () => [...billKeys.all, 'capture', 'usage'] as const,
+  extraction: (id: string) => [...billKeys.all, 'capture', 'extraction', id] as const,
 }

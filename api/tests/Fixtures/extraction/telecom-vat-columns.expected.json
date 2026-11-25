@@ -1,0 +1,33 @@
+{
+  "supplier_name": "Demo Telecom Services LLC",
+  "supplier_trn": "100000000045678",
+  "supplier_invoice_number": "DTS-55120934",
+  "issue_date": "2026-02-28",
+  "due_date": "2026-03-15",
+  "currency": "AED",
+  "items": [
+    {
+      "description": "Business fibre 500 Mbps, March",
+      "quantity": "1.000",
+      "unit_price": 69900,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Mobile plan, Business Unlimited",
+      "quantity": "4.000",
+      "unit_price": 12500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Static IP address",
+      "quantity": "1.000",
+      "unit_price": 5000,
+      "vat_rate": "standard"
+    }
+  ],
+  "totals": {
+    "subtotal": 124900,
+    "vat_total": 6245,
+    "total": 131145
+  }
+}

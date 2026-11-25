@@ -89,7 +89,12 @@ export function BillsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Bills</h1>
           <p className="mt-1 text-sm text-slate-500">Supplier invoices you&apos;ve received. Their VAT is reclaimable input VAT.</p>
         </div>
-        <Button onClick={() => navigate('/bills/new')}>Record bill</Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => navigate('/bills/capture')}>
+            Upload invoice
+          </Button>
+          <Button onClick={() => navigate('/bills/new')}>Record bill</Button>
+        </div>
       </div>
 
       <section className="rounded-xl border border-slate-200 bg-white shadow-sm">

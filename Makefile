@@ -1,4 +1,4 @@
-.PHONY: setup up down logs test test-mysql test-web test-all test-db seed shell tinker fresh
+.PHONY: setup up down logs test test-mysql test-web test-all test-db seed shell tinker fresh eval-ai
 
 ## First run: build images, generate Laravel, install Sanctum, migrate
 setup:
@@ -49,3 +49,7 @@ tinker:
 ## Drop and recreate the dev database, then seed
 fresh:
 	docker compose exec api php artisan migrate:fresh --seed
+
+## Score the configured AI model on the invoice evaluation set (needs AI_API_KEY in api/.env)
+eval-ai:
+	docker compose exec api php artisan invoiceflow:eval-extraction

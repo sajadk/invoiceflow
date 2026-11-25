@@ -1,0 +1,147 @@
+{
+  "supplier_name": "Demo Software Licensing FZ-LLC",
+  "supplier_trn": "100000000034567",
+  "supplier_invoice_number": "DSL-10-2026-118",
+  "issue_date": "2026-10-01",
+  "due_date": "2026-10-31",
+  "currency": "AED",
+  "items": [
+    {
+      "description": "Workspace seat licence, October (user 01)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 02)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 03)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 04)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 05)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 06)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 07)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 08)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 09)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 10)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 11)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 12)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 13)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 14)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 15)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 16)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 17)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 18)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 19)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Workspace seat licence, October (user 20)",
+      "quantity": "1.000",
+      "unit_price": 7500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Shared storage add-on, 1 TB",
+      "quantity": "2.000",
+      "unit_price": 9900,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Priority support plan",
+      "quantity": "1.000",
+      "unit_price": 45000,
+      "vat_rate": "standard"
+    }
+  ],
+  "totals": {
+    "subtotal": 214800,
+    "vat_total": 10740,
+    "total": 225540
+  }
+}

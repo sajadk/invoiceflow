@@ -1,0 +1,33 @@
+{
+  "supplier_name": "Example Office Supplies LLC",
+  "supplier_trn": "100000000012345",
+  "supplier_invoice_number": "EOS-2026-0412",
+  "issue_date": "2026-03-12",
+  "due_date": "2026-04-11",
+  "currency": "AED",
+  "items": [
+    {
+      "description": "A4 copier paper, 80gsm (box of 5 reams)",
+      "quantity": "10.000",
+      "unit_price": 2250,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Toner cartridge, black, high yield",
+      "quantity": "2.000",
+      "unit_price": 34500,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Desk organiser, mesh",
+      "quantity": "3.000",
+      "unit_price": 4875,
+      "vat_rate": "standard"
+    }
+  ],
+  "totals": {
+    "subtotal": 106125,
+    "vat_total": 5306,
+    "total": 111431
+  }
+}

@@ -12,7 +12,8 @@
    ├─ host nginx :80  → car-listing-api (untouched)   ┌──────────────────────────────┐
    └─ Docker          → invoiceflow-api :8080 ────────│ RDS MySQL 8.4 (shared)       │
         (php-fpm + nginx, image from ghcr.io)         │  └─ database "invoiceflow"   │
-                                                      └──────────────────────────────┘
+                      → invoiceflow-worker (queue) ───└──────────────────────────────┘
+                          └─▶ Gemini API (AI invoice capture, outbound HTTPS)
  GitHub Actions: CI ✓ → build image → ghcr.io → SSM runs update.sh on EC2 → build React → S3 → invalidate CloudFront
 ```
 
@@ -160,7 +161,34 @@ These are identifiers, not secrets, so they're *variables*. The only secret (the
 
 5. **Actions → Deploy → Run workflow**. All three jobs should go green, ending with the smoke test hitting `https://<domain>/api/health` through CloudFront.
 
-### 8. Guardrails
+### 8. AI invoice capture (worker + API key)
+
+The `worker` service in `deploy/docker-compose.yml` runs queued jobs from the same image. `update.sh` fetches that file on every deploy, so the worker starts with the first deploy that includes it. It only needs settings in `/opt/invoiceflow/.env`:
+
+```bash
+sudo nano /opt/invoiceflow/.env
+```
+
+```dotenv
+QUEUE_CONNECTION=database
+DB_QUEUE_RETRY_AFTER=180
+
+AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+AI_API_KEY=<your Gemini key from https://aistudio.google.com/apikey>
+AI_MODEL=gemini-2.5-flash
+AI_REASONING_EFFORT=low
+AI_DAILY_LIMIT_PER_USER=10
+AI_DAILY_LIMIT_GLOBAL=100
+```
+
+Then apply it: `cd /opt/invoiceflow && sudo docker compose up -d` (the api container re-caches its config on start), and check both containers with `sudo docker compose ps`.
+
+- Leave `AI_API_KEY` empty to switch the feature off; the rest of the app is unaffected.
+- The key lives only in this file (and your local `api/.env`), never in the repo or in GitHub.
+- Keep the global daily limit under the free tier's daily request quota for the model (see the Gemini rate limits page), so visitors get the app's own friendly limit message rather than provider errors.
+- Memory: the worker is capped at 192 MB next to the api's 320 MB. Check `free -m` after the first deploy.
+
+### 9. Guardrails
 
 - **Billing → Budgets** → *Create budget* → *Monthly cost budget*, e.g. $5, email alert at 80%.
 - **Billing → Credits** shows your remaining credit and the Free plan end date. Before it ends, either upgrade to the Paid plan to keep the demo up, or tear it down (below).
@@ -170,7 +198,8 @@ These are identifiers, not secrets, so they're *variables*. The only secret (the
 ## Day to day
 
 - **Deploy:** merge to `main`. CI → Deploy happens automatically.
-- **Logs:** `cd /opt/invoiceflow && sudo docker compose logs -f api`
+- **Logs:** `cd /opt/invoiceflow && sudo docker compose logs -f api worker`
+- **AI capture failing?** `sudo docker compose logs worker` shows the provider's error (bad key, quota) that users only see as a plain message. Failed jobs: `sudo docker compose exec api php artisan queue:failed`.
 - **Shell / tinker:** `sudo docker compose exec api php artisan tinker`
 - **Roll back the API:** in `docker-compose.yml`, temporarily replace `:latest` with a previous commit's tag (each image is also tagged with its short SHA), then `sudo docker compose up -d`.
 

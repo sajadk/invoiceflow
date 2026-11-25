@@ -22,7 +22,11 @@ RUN composer dump-autoload --no-dev --optimize --no-scripts
 FROM serversideup/php:8.3-fpm-nginx
 
 USER root
-RUN install-php-extensions intl bcmath
+RUN install-php-extensions intl bcmath \
+    # pdftoppm/pdfinfo: AI capture renders PDF invoices to images
+    && apt-get update \
+    && apt-get install -y --no-install-recommends poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
 USER www-data
 
 COPY --chown=www-data:www-data --from=vendor /app /var/www/html

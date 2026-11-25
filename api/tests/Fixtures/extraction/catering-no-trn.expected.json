@@ -1,0 +1,27 @@
+{
+  "supplier_name": "Placeholder Catering LLC",
+  "supplier_trn": null,
+  "supplier_invoice_number": "PC-0098",
+  "issue_date": "2026-03-18",
+  "due_date": null,
+  "currency": "AED",
+  "items": [
+    {
+      "description": "Office lunch buffet",
+      "quantity": "25.000",
+      "unit_price": 4500,
+      "vat_rate": "zero"
+    },
+    {
+      "description": "Delivery and setup",
+      "quantity": "1.000",
+      "unit_price": 5000,
+      "vat_rate": "zero"
+    }
+  ],
+  "totals": {
+    "subtotal": 117500,
+    "vat_total": 0,
+    "total": 117500
+  }
+}

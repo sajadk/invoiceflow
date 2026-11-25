@@ -2,11 +2,11 @@
 
 [![CI](https://github.com/sajadk/invoiceflow/actions/workflows/ci.yml/badge.svg)](https://github.com/sajadk/invoiceflow/actions/workflows/ci.yml)
 
-VAT invoicing and receivables for UAE small businesses: customers with TRNs, AED invoices with 5% VAT, payments, and an overdue aging dashboard.
+VAT invoicing and receivables for UAE small businesses: customers with TRNs, AED invoices with 5% VAT, payments, an overdue aging dashboard, supplier bills for the VAT return, and AI capture of supplier invoices from a PDF or photo.
 
 **Live demo:** https://dg9yvzj444fyz.cloudfront.net (log in with `demo@invoiceflow.test` / `password`)
 
-**Stack:** React 19 · TypeScript · Vite · Tailwind CSS v4 · TanStack Query · React Router · React Hook Form + Zod · Recharts · Laravel · Sanctum · MySQL 8 · Docker · Vitest · GitHub Actions
+**Stack:** React 19 · TypeScript · Vite · Tailwind CSS v4 · TanStack Query · React Router · React Hook Form + Zod · Recharts · Laravel · Sanctum · queues · MySQL 8 · Docker · Vitest · GitHub Actions · Gemini (any OpenAI-compatible API)
 
 > 🚧 Work in progress. See the roadmap below.
 
@@ -20,6 +20,7 @@ VAT invoicing and receivables for UAE small businesses: customers with TRNs, AED
 
 ```
 Browser ──► web (Vite :5173) ──/api proxy──► api (Laravel :8000) ──► mysql (:3306)
+                                                    worker (queue) ──┘ └──► AI API (Gemini)
 ```
 
 - `/web` — React SPA. All API calls go to `/api`, so the browser only ever talks to one origin. Sanctum's session and XSRF cookies stay first-party, with no CORS juggling.
@@ -32,7 +33,7 @@ Requirements: Docker Desktop and `make`.
 
 ```bash
 make setup   # first run only: builds images, generates Laravel, installs Sanctum, migrates
-make up      # starts mysql, api and web
+make up      # starts mysql, api, worker and web
 ```
 
 | Service | URL |
@@ -43,7 +44,9 @@ make up      # starts mysql, api and web
 
 **Demo account:** `demo@invoiceflow.test` / `password`, with 32 sample customers, 28 invoices in every status (including part-paid ones) and 18 supplier bills, all with clearly fictional company names (created by `make seed`).
 
-Other commands: `make seed`, `make shell`, `make tinker`, `make fresh`, `make down`.
+Other commands: `make seed`, `make shell`, `make tinker`, `make fresh`, `make down`, `make eval-ai`.
+
+**AI capture (optional):** add a free Gemini key from [Google AI Studio](https://aistudio.google.com/apikey) to `api/.env` as `AI_API_KEY=…`. Without it, the app works as before and the upload page says capture isn't set up.
 
 ## Testing
 
@@ -54,7 +57,7 @@ Other commands: `make seed`, `make shell`, `make tinker`, `make fresh`, `make do
 | `make test-web` | TypeScript typecheck, ESLint and Vitest |
 | `make test-all` | everything CI runs |
 
-- **Backend:** PHPUnit feature tests for every endpoint (auth, ownership 404s, validation, state transitions, payments, dashboard figures with a frozen clock), plus unit tests for the VAT calculator.
+- **Backend:** PHPUnit feature tests for every endpoint (auth, ownership 404s, validation, state transitions, payments, dashboard figures with a frozen clock), plus unit tests for the VAT calculator and for how AI output is checked. The AI provider is faked with `Http::fake()`, so tests never call it.
 - **Frontend:** Vitest + Testing Library + MSW. Components are tested the way a user uses them (labels, typing, clicking), against mocked API responses. `money.test.ts` runs **the same VAT and rounding cases** as `InvoiceCalculatorTest.php`, so browser and server maths can't drift apart.
 - **CI** (GitHub Actions, every PR): API tests on SQLite **and** MySQL, then typecheck, lint, Vitest and a production build.
 
@@ -89,6 +92,9 @@ On the frontend, an `AuthProvider` (React Context backed by TanStack Query) expo
 | POST | `/api/bills` | session |
 | GET / PUT / DELETE | `/api/bills/{id}` | session (PUT/DELETE unpaid only) |
 | POST | `/api/bills/{id}/mark-paid` · `/mark-unpaid` | session |
+| GET | `/api/bill-extractions/usage` | session |
+| POST | `/api/bill-extractions` (multipart `file`) → 202 | session, 5/min, daily caps |
+| GET | `/api/bill-extractions/{ulid}` (polled) | session (owner only) |
 | GET | `/api/dashboard` | session |
 | GET | `/api/invoices/{id}/pdf` | session |
 
@@ -103,6 +109,9 @@ web/src/
   router.tsx
 api/
   app/Http/Controllers/Api/
+  app/Extraction/  AI invoice capture: provider client, prompt, output checks, limits
+  app/Jobs/        queued jobs
+  tests/Fixtures/extraction/  AI evaluation set
   routes/api.php
 docker/api/       dev image + setup script
 ```
@@ -131,6 +140,24 @@ Server-side search (name, email, TRN), emirate filter, sorting and pagination. E
 - Recording the same supplier invoice number twice is refused, because it would claim the same input VAT twice.
 - The dashboard's **VAT card** shows the quarter's position as on a UAE VAT return: **output VAT** on invoices issued − **input VAT** on bills received = **VAT payable** (or reclaimable).
 
+## AI invoice capture
+
+Upload a supplier invoice (PDF or photo) and the bill form fills itself in: supplier, TRN, invoice number, dates, line items and VAT. Nothing is saved until the user has checked it.
+
+```
+upload ─► 202 + id ─► queue worker: PDF → images (poppler) → vision model → normalise + cross-check
+   browser polls GET /api/bill-extractions/{id} ◄──────────────────────────────┘
+   └─► review: document beside a pre-filled bill form, doubts highlighted ─► POST /api/bills
+```
+
+- **The model's answer is untrusted input.** `BillExtractionNormalizer` type-checks every field, converts AED to integer fils and TRNs to digits, and recalculates the bill with the same `InvoiceCalculator` that saves real bills. When the lines don't add up to the printed totals, prices look VAT-inclusive, the TRN isn't a valid UAE TRN, VAT is charged without a TRN, a date is in the future, or the invoice was already recorded, that field gets a **warning**. The review screen lists the warnings and highlights the fields, and a live check compares the form's total with the one on the document as the user corrects it.
+- **Background job, not a long request:** the AI call takes 5–30 seconds, so the upload returns **202** at once and a queue worker (`ExtractBill`, database queue, separate container) does the work while the browser polls with TanStack Query's `refetchInterval`. The upload is deleted as soon as it has been read.
+- **Provider-agnostic:** any OpenAI-compatible chat completions API, called with Laravel's HTTP client (no SDK). It defaults to **Gemini 2.5 Flash on the free tier**; switching to OpenAI, Groq, OpenRouter or a local Ollama is a `.env` change. PDFs are rendered to PNG first, because every vision API accepts images.
+- **Limits for a public demo:** 5 MB, PDF/JPG/PNG/WebP (checked from the file contents), the first 3 PDF pages, 5 uploads a minute, and daily caps per user and for the whole demo (429 with `Retry-After`). Provider errors are retried once, logged, and shown to users as plain messages.
+- **Measured, not eyeballed:** `make eval-ai` runs the real pipeline on an [evaluation set](api/tests/Fixtures/extraction) of fictional invoices in different layouts (mixed VAT rates, VAT-inclusive columns, two pages, no TRN, a tilted phone photo) and reports accuracy per field, so a prompt or model change is judged by numbers.
+
+> The free Gemini tier may use submitted content to improve Google's models. The demo says so on the upload page; don't upload real invoices with personal or confidential details.
+
 ## Deployment (AWS, Mumbai)
 
 ```
@@ -139,7 +166,7 @@ Browser ─HTTPS─▶ CloudFront ─┬─ /*                 → S3 (React bui
 ```
 
 - **CloudFront** serves the SPA from a private **S3** bucket and forwards API calls to the server, so the browser sees one HTTPS origin and Sanctum's cookies stay first-party.
-- **EC2** runs the API as a single container (`serversideup/php` fpm-nginx, built in CI and pulled from **ghcr.io**), memory-capped beside another app on the same instance.
+- **EC2** runs the API container (`serversideup/php` fpm-nginx, built in CI and pulled from **ghcr.io**) and a queue worker from the same image, both memory-capped beside another app on the same instance.
 - **RDS MySQL** with a dedicated, least-privileged database user.
 - The origin accepts only CloudFront's IP ranges **and** a secret origin header.
 - **GitHub Actions** deploys on every green merge to `main`: build image → **AWS Systems Manager** runs the update on EC2 (no SSH) → upload React build → invalidate CloudFront → smoke test. AWS access uses **OIDC** short-lived credentials, with no stored keys.
@@ -156,5 +183,5 @@ Full setup, operations and teardown: [`docs/deployment.md`](docs/deployment.md).
 - [x] Tests (Vitest, Testing Library, PHPUnit) and GitHub Actions CI
 - [x] AWS deploy (S3 + CloudFront, EC2 + RDS)
 - [x] Bills (supplier invoices) and quarterly VAT payable
-- [ ] AI invoice capture: upload a supplier invoice, review the extracted bill
+- [x] AI invoice capture: upload a supplier invoice, review the extracted bill
 - [ ] Hardening: Elastic IP, TLS from CloudFront to the origin, custom domain

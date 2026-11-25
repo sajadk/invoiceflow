@@ -1,0 +1,33 @@
+{
+  "supplier_name": "Placeholder Freight Forwarding FZE",
+  "supplier_trn": "100000000023456",
+  "supplier_invoice_number": "PFF/INV/7781",
+  "issue_date": "2026-02-05",
+  "due_date": "2026-03-07",
+  "currency": "AED",
+  "items": [
+    {
+      "description": "International air freight DXB-FRA, 120 kg",
+      "quantity": "1.000",
+      "unit_price": 185000,
+      "vat_rate": "zero"
+    },
+    {
+      "description": "Customs clearance and documentation",
+      "quantity": "1.000",
+      "unit_price": 35000,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Local delivery, Dubai",
+      "quantity": "2.000",
+      "unit_price": 12000,
+      "vat_rate": "standard"
+    }
+  ],
+  "totals": {
+    "subtotal": 244000,
+    "vat_total": 2950,
+    "total": 246950
+  }
+}

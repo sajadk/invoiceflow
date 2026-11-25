@@ -3,6 +3,7 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { GuestRoute } from '@/components/routing/GuestRoute'
 import { ProtectedRoute } from '@/components/routing/ProtectedRoute'
+import { BillCapturePage } from '@/pages/BillCapturePage'
 import { BillCreatePage } from '@/pages/BillCreatePage'
 import { BillDetailPage } from '@/pages/BillDetailPage'
 import { BillEditPage } from '@/pages/BillEditPage'
@@ -51,6 +52,7 @@ export const router = createBrowserRouter([
           { path: 'payments', element: <PaymentsPage /> },
           { path: 'bills', element: <BillsPage /> },
           { path: 'bills/new', element: <BillCreatePage /> },
+          { path: 'bills/capture', element: <BillCapturePage /> },
           { path: 'bills/:billId', element: <BillDetailPage /> },
           { path: 'bills/:billId/edit', element: <BillEditPage /> },
         ],

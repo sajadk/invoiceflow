@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BillController;
+use App\Http\Controllers\Api\BillExtractionController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\HealthController;
@@ -38,6 +39,13 @@ Route::middleware(VerifyOriginSecret::class)->group(function () {
         Route::controller(BillController::class)->prefix('bills/{bill}')->name('bills.')->group(function () {
             Route::post('/mark-paid', 'markPaid')->name('mark-paid');
             Route::post('/mark-unpaid', 'markUnpaid')->name('mark-unpaid');
+        });
+
+        // AI invoice capture: upload, then poll until the queue worker has read it.
+        Route::controller(BillExtractionController::class)->prefix('bill-extractions')->name('bill-extractions.')->group(function () {
+            Route::get('/usage', 'usage')->name('usage');
+            Route::post('/', 'store')->middleware('throttle:5,1')->name('store');
+            Route::get('/{extraction}', 'show')->whereUlid('extraction')->name('show');
         });
 
         Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');

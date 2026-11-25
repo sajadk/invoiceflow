@@ -1,0 +1,33 @@
+{
+  "supplier_name": "Example Printing Press LLC",
+  "supplier_trn": "100000000056789",
+  "supplier_invoice_number": "EPP 2231",
+  "issue_date": "2026-01-09",
+  "due_date": "2026-02-08",
+  "currency": "AED",
+  "items": [
+    {
+      "description": "Business cards, 350gsm matt, 2 names",
+      "quantity": "500.000",
+      "unit_price": 35,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Brochures A5, 4 pages, full colour",
+      "quantity": "1000.000",
+      "unit_price": 120,
+      "vat_rate": "standard"
+    },
+    {
+      "description": "Roll-up banner 85 x 200 cm",
+      "quantity": "2.000",
+      "unit_price": 28500,
+      "vat_rate": "standard"
+    }
+  ],
+  "totals": {
+    "subtotal": 194500,
+    "vat_total": 9725,
+    "total": 204225
+  }
+}

@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
 
-type Tone = 'error' | 'info'
+type Tone = 'error' | 'warning' | 'info'
 
 const tones: Record<Tone, string> = {
   error: 'border-rose-200 bg-rose-50 text-rose-700',
+  warning: 'border-amber-200 bg-amber-50 text-amber-900',
   info: 'border-brand-100 bg-brand-50 text-brand-900',
 }
 

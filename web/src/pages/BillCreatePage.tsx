@@ -11,7 +11,13 @@ export function BillCreatePage() {
           ← Bills
         </Link>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">Record a bill</h1>
-        <p className="mt-1 text-sm text-slate-500">Copy the details from the supplier&apos;s invoice.</p>
+        <p className="mt-1 text-sm text-slate-500">
+          Copy the details from the supplier&apos;s invoice, or{' '}
+          <Link to="/bills/capture" className="font-medium text-brand-700 hover:underline">
+            upload it and let AI fill this in
+          </Link>
+          .
+        </p>
       </div>
 
       <BillForm
